@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Debug Test</title>
+<style>body{font-family:monospace;background:#111;color:#eee;padding:20px;}input,button{margin:8px 0;padding:8px;font-size:14px;}button{background:#3b82f6;color:white;border:none;border-radius:6px;cursor:pointer;padding:8px 16px;}pre{background:#1e293b;padding:12px;border-radius:6px;overflow-x:auto;font-size:12px;white-space:pre-wrap;}</style>
+</head>
+<body>
+<h2>🔧 Worker Debug Test</h2>
+
+<div>
+  <b>Step 1:</b> Enter Worker URL<br>
+  <input type="text" id="wurl" style="width:500px" placeholder="https://your-worker.workers.dev">
+</div>
+<div>
+  <b>Step 2:</b> Select an image file<br>
+  <input type="file" id="ffile" accept="image/*">
+</div>
+<div>
+  <button onclick="runTest()">Run Test</button>
+</div>
+<pre id="log">Waiting...</pre>
+
+<script>
+function log(msg) {
+  document.getElementById('log').textContent += msg + '\n';
+}
+function clearLog() {
+  document.getElementById('log').textContent = '';
+}
+
+document.getElementById('ffile').addEventListener('change', function(e) {
+  clearLog();
+  const file = e.target.files[0];
+  if (!file) return;
+  log('File selected: ' + file.name);
+  log('File type: ' + file.type);
+  log('File size: ' + file.size + ' bytes');
+
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    const full = ev.target.result;
+    const b64  = full.split(',')[1];
+    log('FileReader success');
+    log('Full dataURL length: ' + full.length);
+    log('Base64 length: ' + (b64 ? b64.length : 'UNDEFINED - split failed!'));
+    log('First 50 chars of dataURL: ' + full.substring(0, 50));
+    if (b64) {
+      log('First 20 chars of base64: ' + b64.substring(0, 20));
+      window._b64  = b64;
+      window._mime = file.type;
+      log('\n✅ File ready. Click "Run Test" to send to Worker.');
+    } else {
+      log('\n❌ Base64 extraction failed!');
+    }
+  };
+  reader.onerror = function(err) {
+    log('❌ FileReader ERROR: ' + JSON.stringify(err));
+  };
+  reader.readAsDataURL(file);
+});
+
+async function runTest() {
+  clearLog();
+  const wurl = document.getElementById('wurl').value.trim().replace(/\/$/,'');
+  if (!wurl) { log('❌ Enter Worker URL first'); return; }
+  if (!window._b64) { log('❌ Select a file first'); return; }
+
+  log('Worker URL: ' + wurl);
+  log('MIME: ' + window._mime);
+  log('Base64 length: ' + window._b64.length);
+  log('\nSending request...');
+
+  try {
+    const body = {
+      image_base64: window._b64,
+      image_type:   window._mime,
+      prompt: 'Return only this JSON: {"test": "ok", "received_chars": ' + window._b64.length + '}'
+    };
+    log('Request body size: ' + JSON.stringify(body).length + ' bytes');
+
+    const res = await fetch(wurl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    const text = await res.text();
+    log('\nHTTP Status: ' + res.status);
+    log('Response: ' + text);
+
+    if (res.ok) {
+      log('\n✅ Worker responded successfully!');
+    } else {
+      log('\n❌ Worker returned error');
+    }
+  } catch(err) {
+    log('\n❌ Fetch error: ' + err.message);
+  }
+}
+</script>
+</body>
+</html>
