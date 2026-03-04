@@ -6,98 +6,81 @@
 <title>单据智能提取 · N7R</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&display=swap');
-  :root {
-    --bg:#080f1a;--panel:#0f1c2e;--panel2:#152233;--border:rgba(255,255,255,0.07);
-    --blue:#3b82f6;--sky:#38bdf8;--teal:#0d9488;--green:#22c55e;
-    --red:#ef4444;--gray:#64748b;--muted:#94a3b8;--white:#f1f5f9;--ink:#0f172a;
-  }
+  :root{--bg:#080f1a;--panel:#0f1c2e;--panel2:#152233;--border:rgba(255,255,255,0.07);--blue:#3b82f6;--teal:#0d9488;--green:#22c55e;--red:#ef4444;--gray:#64748b;--muted:#94a3b8;--white:#f1f5f9;--ink:#0f172a;}
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--white);min-height:100vh;display:flex;flex-direction:column;}
   header{padding:18px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:14px;background:var(--panel);}
-  .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+  .logo{width:34px;height:34px;border-radius:8px;background:linear-gradient(135deg,var(--blue),var(--teal));display:flex;align-items:center;justify-content:center;font-size:16px;}
   .header-text h1{font-size:15px;font-weight:600;}
   .header-text p{font-size:11px;color:var(--muted);margin-top:1px;}
-
-  /* ── CONFIG BANNER ── */
-  .config-banner{background:rgba(239,68,68,0.1);border-bottom:1px solid rgba(239,68,68,0.25);padding:10px 28px;font-size:12px;color:#fca5a5;display:flex;align-items:center;gap:8px;}
-  .config-banner.ok{background:rgba(34,197,94,0.08);border-bottom-color:rgba(34,197,94,0.2);color:#86efac;}
-  .config-banner input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--white);font-family:'DM Mono',monospace;width:360px;outline:none;}
-  .config-banner input:focus{border-color:var(--blue);}
-  .config-btn{padding:4px 12px;border-radius:6px;background:var(--blue);border:none;color:white;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
-
+  .banner{padding:10px 28px;font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);}
+  .warn{background:rgba(239,68,68,0.1);color:#fca5a5;}
+  .okb{background:rgba(34,197,94,0.08);color:#86efac;}
+  .banner input{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:4px 10px;font-size:12px;color:var(--white);font-family:'DM Mono',monospace;width:360px;outline:none;}
+  .cbtn{padding:4px 12px;border-radius:6px;background:var(--blue);border:none;color:white;font-size:11px;font-weight:600;cursor:pointer;}
   .app{display:grid;grid-template-columns:1fr 1fr;flex:1;}
-  @media(max-width:768px){.app{grid-template-columns:1fr;}}
-  .left{border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px;gap:16px;overflow-y:auto;}
-  .panel-label{font-size:10px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
-  .dropzone{border:2px dashed rgba(59,130,246,0.3);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all 0.2s;background:rgba(59,130,246,0.03);position:relative;}
+  @media(max-width:700px){.app{grid-template-columns:1fr;}}
+  .left{border-right:1px solid var(--border);padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;}
+  .right{padding:24px;display:flex;flex-direction:column;gap:16px;overflow-y:auto;}
+  .plabel{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+  .dropzone{border:2px dashed rgba(59,130,246,0.3);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;background:rgba(59,130,246,0.03);position:relative;transition:all .2s;}
   .dropzone:hover,.dropzone.drag{border-color:var(--blue);background:rgba(59,130,246,0.08);}
   .dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;}
-  .dz-icon{font-size:32px;margin-bottom:10px;}
-  .dz-title{font-size:13px;font-weight:600;color:var(--white);margin-bottom:4px;}
-  .dz-sub{font-size:11px;color:var(--muted);}
-  .preview-area{border-radius:10px;overflow:hidden;background:var(--panel2);border:1px solid var(--border);min-height:120px;display:flex;align-items:center;justify-content:center;}
-  .preview-area img{max-width:100%;max-height:280px;object-fit:contain;display:block;}
-  .pdf-icon{text-align:center;padding:24px;color:var(--muted);font-size:12px;}
-  .pdf-icon div{font-size:36px;margin-bottom:8px;}
-  .extract-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--blue),#1d4ed8);border:none;border-radius:10px;color:white;font-size:14px;font-weight:600;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px;font-family:'Inter',sans-serif;}
-  .extract-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 24px rgba(59,130,246,0.35);}
-  .extract-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+  .preview{border-radius:10px;overflow:hidden;background:var(--panel2);border:1px solid var(--border);min-height:120px;display:flex;align-items:center;justify-content:center;}
+  .preview img{max-width:100%;max-height:260px;object-fit:contain;display:block;}
+  .extract-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--blue),#1d4ed8);border:none;border-radius:10px;color:white;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;}
+  .extract-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,.35);}
+  .extract-btn:disabled{opacity:.5;cursor:not-allowed;}
   .spin{animation:spin 1s linear infinite;display:inline-block;}
   @keyframes spin{to{transform:rotate(360deg);}}
-  .right{display:flex;flex-direction:column;padding:24px;gap:16px;overflow-y:auto;}
-  .status-bar{padding:10px 14px;border-radius:8px;font-size:12px;display:none;align-items:center;gap:8px;}
-  .status-bar.show{display:flex;}
-  .status-bar.loading{background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:#93c5fd;}
-  .status-bar.success{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:#86efac;}
-  .status-bar.error{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);color:#fca5a5;}
-  .result-card{background:var(--panel2);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:none;}
-  .result-card.show{display:block;}
-  .result-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-  .result-header-left{display:flex;align-items:center;gap:10px;}
-  .result-title{font-size:13px;font-weight:600;}
-  .confidence-badge{font-size:10px;padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace;}
-  .conf-high{background:rgba(34,197,94,0.15);color:#86efac;}
-  .conf-med{background:rgba(249,115,22,0.15);color:#fdba74;}
-  .fields-section{padding:16px 18px;border-bottom:1px solid var(--border);}
-  .fields-title{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:12px;}
-  .field-row{display:grid;grid-template-columns:110px 1fr;gap:8px;margin-bottom:8px;align-items:start;}
-  .field-key{font-size:11px;color:var(--muted);padding-top:6px;}
-  .field-val{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--white);min-height:30px;outline:none;font-family:'Inter',sans-serif;resize:none;width:100%;}
-  .field-val:focus{border-color:rgba(59,130,246,0.5);background:rgba(59,130,246,0.05);}
-  .items-section{padding:16px 18px;}
-  .items-table{width:100%;border-collapse:collapse;font-size:11px;}
-  .items-table th{text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);}
-  .items-table td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.03);vertical-align:top;}
-  .items-table tr:last-child td{border-bottom:none;}
-  .item-input{background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-size:11px;color:var(--white);width:100%;outline:none;font-family:'Inter',sans-serif;}
-  .item-input:focus{border-color:rgba(59,130,246,0.4);}
-  .item-tag{display:inline-block;font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(59,130,246,0.15);color:#93c5fd;font-weight:500;margin-bottom:2px;}
-  .actions{padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;}
-  .btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
-  .btn-primary{background:var(--teal);color:white;}
-  .btn-primary:hover{background:#0f766e;}
-  .btn-feishu{background:#3370FF;color:white;}
-  .btn-feishu:hover{background:#2860e0;}
-  .btn-secondary{background:rgba(255,255,255,0.06);color:var(--white);border:1px solid var(--border);}
-  .btn-secondary:hover{background:rgba(255,255,255,0.1);}
-  .btn-ghost{background:transparent;color:var(--muted);font-size:11px;}
-  .btn-ghost:hover{color:var(--white);}
-  .history-item{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:all 0.15s;}
-  .history-item:hover{border-color:rgba(59,130,246,0.3);}
-  .hi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;}
-  .hi-supplier{font-size:13px;font-weight:600;}
-  .hi-date{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
-  .hi-items{font-size:11px;color:var(--muted);line-height:1.7;}
-  .hi-total{font-size:12px;font-weight:600;color:var(--green);margin-top:6px;}
-  .empty-state{text-align:center;padding:60px 20px;color:var(--muted);font-size:12px;line-height:1.8;}
-  .empty-state .icon{font-size:36px;margin-bottom:12px;}
-  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;}
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-  .toast.ok{background:var(--green);color:var(--ink);}
-  .toast.fail{background:var(--red);color:white;}
   .tabs{display:flex;gap:2px;background:var(--panel2);border-radius:8px;padding:3px;border:1px solid var(--border);}
-  .tab{flex:1;padding:6px;border-radius:6px;font-size:11px;font-weight:500;text-align:center;cursor:pointer;color:var(--muted);transition:all 0.15s;}
+  .tab{flex:1;padding:6px;border-radius:6px;font-size:11px;font-weight:500;text-align:center;cursor:pointer;color:var(--muted);transition:all .15s;}
   .tab.active{background:var(--panel);color:var(--white);}
+  .sbar{padding:10px 14px;border-radius:8px;font-size:12px;display:none;align-items:center;gap:8px;}
+  .sbar.show{display:flex;}
+  .sbar.loading{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:#93c5fd;}
+  .sbar.success{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#86efac;}
+  .sbar.error{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5;}
+  .rcard{background:var(--panel2);border:1px solid var(--border);border-radius:12px;overflow:hidden;display:none;}
+  .rcard.show{display:block;}
+  .rhead{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+  .cbadge{font-size:10px;padding:2px 8px;border-radius:10px;font-family:'DM Mono',monospace;}
+  .ch{background:rgba(34,197,94,.15);color:#86efac;}
+  .cm{background:rgba(249,115,22,.15);color:#fdba74;}
+  .fsec{padding:16px 18px;border-bottom:1px solid var(--border);}
+  .ftitle{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:12px;}
+  .frow{display:grid;grid-template-columns:90px 1fr;gap:8px;margin-bottom:8px;align-items:start;}
+  .fkey{font-size:11px;color:var(--muted);padding-top:6px;}
+  .fval{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;color:var(--white);outline:none;font-family:'Inter',sans-serif;resize:none;width:100%;}
+  .fval:focus{border-color:rgba(59,130,246,.5);}
+  .isec{padding:16px 18px;}
+  .itable{width:100%;border-collapse:collapse;font-size:11px;}
+  .itable th{text-align:left;padding:6px 8px;color:var(--muted);font-weight:500;border-bottom:1px solid var(--border);}
+  .itable td{padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:top;}
+  .itable tr:last-child td{border-bottom:none;}
+  .ii{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:5px;padding:4px 8px;font-size:11px;color:var(--white);width:100%;outline:none;font-family:'Inter',sans-serif;}
+  .itag{display:inline-block;font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(59,130,246,.15);color:#93c5fd;font-weight:500;margin-bottom:2px;}
+  .actions{padding:14px 18px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;}
+  .btn{padding:8px 16px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:none;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:6px;transition:all .15s;}
+  .btn-t{background:var(--teal);color:white;}.btn-t:hover{background:#0f766e;}
+  .btn-f{background:#3370FF;color:white;}.btn-f:hover{background:#2860e0;}
+  .btn-s{background:rgba(255,255,255,.06);color:var(--white);border:1px solid var(--border);}
+  .btn-g{background:transparent;color:var(--muted);font-size:11px;}
+  .hi{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;}
+  .hi:hover{border-color:rgba(59,130,246,.3);}
+  .hi-top{display:flex;justify-content:space-between;margin-bottom:6px;}
+  .hi-s{font-size:13px;font-weight:600;}
+  .hi-d{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+  .hi-i{font-size:11px;color:var(--muted);line-height:1.7;}
+  .hi-t{font-size:12px;font-weight:600;color:var(--green);margin-top:6px;}
+  .empty{text-align:center;padding:60px 20px;color:var(--muted);font-size:12px;line-height:1.8;}
+  .ic{font-size:36px;margin-bottom:12px;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;opacity:0;transition:all .3s;pointer-events:none;z-index:999;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .tok{background:var(--green);color:var(--ink);}
+  .tfl{background:var(--red);color:white;}
+  .cfg-box{background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;}
+  .cfg-inp{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--white);outline:none;font-family:'Inter',sans-serif;width:100%;height:34px;}
 </style>
 </head>
 <body>
@@ -106,444 +89,321 @@
   <div class="logo">🧾</div>
   <div class="header-text">
     <h1>单据智能提取 · N7R</h1>
-    <p>Supplier PDF / WeChat image → AI extract → Save to Feishu</p>
+    <p>Supplier PDF / image → AI extract → Save to Feishu</p>
   </div>
 </header>
 
-<!-- CONFIG BANNER -->
-<div class="config-banner" id="configBanner">
-  ⚙️ &nbsp;Enter your Cloudflare Worker URL to activate:&nbsp;
-  <input type="text" id="workerUrl" placeholder="https://your-worker.your-subdomain.workers.dev" />
-  <button class="config-btn" onclick="saveWorkerUrl()">Save</button>
+<div class="banner warn" id="banner">
+  ⚙️ &nbsp;Enter your Cloudflare Worker URL:&nbsp;
+  <input type="text" id="workerUrl" placeholder="https://your-worker.workers.dev" />
+  <button class="cbtn" onclick="saveWorker()">Save</button>
 </div>
 
 <div class="app">
   <div class="left">
     <div>
-      <div class="panel-label">Upload Document</div>
-      <div class="dropzone" id="dropzone">
-        <input type="file" id="fileInput" accept="image/*,.pdf" />
-        <div class="dz-icon">📄</div>
-        <div class="dz-title">Click or drag file here</div>
-        <div class="dz-sub">PDF · JPG · PNG · WeChat screenshot</div>
+      <div class="plabel">Upload Document</div>
+      <div class="dropzone" id="dz">
+        <input type="file" id="fi" accept="image/jpeg,image/png,image/gif,image/webp,application/pdf" />
+        <div style="font-size:32px;margin-bottom:10px">📄</div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:4px">Click or drag file here</div>
+        <div style="font-size:11px;color:var(--muted)">JPG · PNG · PDF · WeChat screenshot</div>
       </div>
     </div>
     <div>
-      <div class="panel-label">Preview</div>
-      <div class="preview-area" id="previewArea">
-        <div class="empty-state"><div class="icon">🖼</div>Preview here after upload</div>
+      <div class="plabel">Preview</div>
+      <div class="preview" id="pv">
+        <div class="empty"><div class="ic">🖼</div>Preview after upload</div>
       </div>
     </div>
-    <button class="extract-btn" id="extractBtn" disabled>
-      <span id="btnIcon">✨</span>
-      <span id="btnText">Upload a file to start</span>
+    <button class="extract-btn" id="exBtn" disabled>
+      <span id="bIcon">✨</span><span id="bText">Upload a file to start</span>
     </button>
-    <div style="font-size:11px;color:var(--muted);line-height:1.7;padding:0 2px">
-      💡 Supplier sends PDF/image via email or WeChat → upload here → AI extracts all line items → save directly to Feishu price ledger.
+    <div style="font-size:11px;color:var(--muted);line-height:1.7">
+      💡 Upload supplier doc → AI reads all items and prices → one click save to Feishu price ledger.
     </div>
   </div>
 
   <div class="right">
     <div class="tabs">
-      <div class="tab active" onclick="switchTab('extract')">📋 Extracted Result</div>
-      <div class="tab" onclick="switchTab('history')">🗂 History</div>
-      <div class="tab" onclick="switchTab('settings')">⚙️ Feishu</div>
+      <div class="tab active" onclick="goTab('extract')">📋 Result</div>
+      <div class="tab" onclick="goTab('history')">🗂 History</div>
+      <div class="tab" onclick="goTab('settings')">⚙️ Feishu</div>
     </div>
 
-    <div id="extractTab">
-      <div class="status-bar" id="statusBar"></div>
-      <div class="result-card" id="resultCard">
-        <div class="result-header">
-          <div class="result-header-left">
-            <span class="result-title">Extracted Data</span>
-            <span class="confidence-badge conf-high" id="confBadge">High confidence</span>
+    <div id="tEx">
+      <div class="sbar" id="sbar"></div>
+      <div class="rcard" id="rc">
+        <div class="rhead">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:13px;font-weight:600">Extracted Data</span>
+            <span class="cbadge ch" id="cbadge">High confidence</span>
           </div>
-          <button class="btn btn-ghost" onclick="clearResult()">Clear</button>
+          <button class="btn btn-g" onclick="clearR()">Clear</button>
         </div>
-        <div class="fields-section">
-          <div class="fields-title">Header Info</div>
-          <div class="field-row"><div class="field-key">Supplier</div><textarea class="field-val" id="f-supplier" rows="1"></textarea></div>
-          <div class="field-row"><div class="field-key">Date</div><textarea class="field-val" id="f-date" rows="1"></textarea></div>
-          <div class="field-row"><div class="field-key">Doc No.</div><textarea class="field-val" id="f-docnum" rows="1"></textarea></div>
-          <div class="field-row"><div class="field-key">Currency</div><textarea class="field-val" id="f-currency" rows="1"></textarea></div>
-          <div class="field-row"><div class="field-key">Total</div><textarea class="field-val" id="f-total" rows="1"></textarea></div>
-          <div class="field-row"><div class="field-key">Payment</div><textarea class="field-val" id="f-payment" rows="1"></textarea></div>
-          <div class="field-row"><div class="field-key">Delivery</div><textarea class="field-val" id="f-delivery" rows="1"></textarea></div>
-          <div class="field-row"><div class="field-key">Notes</div><textarea class="field-val" id="f-notes" rows="2"></textarea></div>
+        <div class="fsec">
+          <div class="ftitle">Header</div>
+          <div class="frow"><div class="fkey">Supplier</div><textarea class="fval" id="fS" rows="1"></textarea></div>
+          <div class="frow"><div class="fkey">Date</div><textarea class="fval" id="fD" rows="1"></textarea></div>
+          <div class="frow"><div class="fkey">Doc No.</div><textarea class="fval" id="fN" rows="1"></textarea></div>
+          <div class="frow"><div class="fkey">Currency</div><textarea class="fval" id="fC" rows="1"></textarea></div>
+          <div class="frow"><div class="fkey">Total</div><textarea class="fval" id="fT" rows="1"></textarea></div>
+          <div class="frow"><div class="fkey">Payment</div><textarea class="fval" id="fP" rows="1"></textarea></div>
+          <div class="frow"><div class="fkey">Delivery</div><textarea class="fval" id="fDel" rows="1"></textarea></div>
+          <div class="frow"><div class="fkey">Notes</div><textarea class="fval" id="fNotes" rows="2"></textarea></div>
         </div>
-        <div class="items-section">
-          <div class="fields-title">Line Items</div>
-          <table class="items-table">
-            <thead><tr><th style="width:36%">Item / SKU</th><th style="width:12%">Qty</th><th style="width:12%">Unit</th><th style="width:18%">Unit Price</th><th style="width:22%">Subtotal</th></tr></thead>
-            <tbody id="itemsBody"></tbody>
+        <div class="isec">
+          <div class="ftitle">Line Items</div>
+          <table class="itable">
+            <thead><tr>
+              <th style="width:36%">Item / SKU</th><th style="width:12%">Qty</th>
+              <th style="width:11%">Unit</th><th style="width:18%">Unit Price</th><th style="width:23%">Subtotal</th>
+            </tr></thead>
+            <tbody id="ib"></tbody>
           </table>
         </div>
         <div class="actions">
-          <button class="btn btn-primary" onclick="copyForFeishu()">📋 Copy (Feishu format)</button>
-          <button class="btn btn-feishu" id="saveFeishuBtn" onclick="saveToFeishu()">🪁 Save to Feishu</button>
-          <button class="btn btn-secondary" onclick="saveToHistory()">💾 History</button>
+          <button class="btn btn-t" onclick="doCopy()">📋 Copy</button>
+          <button class="btn btn-f" id="fbtn" onclick="doFeishu()">🪁 Save to Feishu</button>
+          <button class="btn btn-s" onclick="doHist()">💾 Save history</button>
         </div>
       </div>
-      <div id="emptyExtract" class="empty-state">
-        <div class="icon">🧾</div>
-        Upload a supplier document<br>AI extracts items, prices, quantities<br>
-        <span style="font-size:11px;color:var(--gray)">Chinese · English · Mixed</span>
-      </div>
+      <div id="emEx" class="empty"><div class="ic">🧾</div>Upload a document<br>AI extracts all items and prices</div>
     </div>
 
-    <div id="historyTab" style="display:none"><div id="historyList"></div></div>
+    <div id="tHi" style="display:none"><div id="hList"></div></div>
 
-    <!-- FEISHU SETTINGS TAB -->
-    <div id="settingsTab" style="display:none">
-      <div style="background:var(--panel2);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;">
-        <div style="font-size:13px;font-weight:600;color:var(--white)">Feishu Bitable Config</div>
+    <div id="tSet" style="display:none">
+      <div class="cfg-box">
+        <div style="font-size:13px;font-weight:600">Feishu Bitable Config</div>
         <div style="font-size:11px;color:var(--muted);line-height:1.7">
-          Get these from: Feishu Open Platform → Your App credentials, and from the Bitable URL.<br>
-          The App Token is in the URL: <code style="font-family:monospace;background:rgba(255,255,255,0.07);padding:1px 5px;border-radius:3px">/base/<b>[appToken]</b>?table=<b>[tableId]</b></code>
+          Get App ID + Secret from open.feishu.cn.<br>
+          Bitable URL: <code style="font-size:10px;background:rgba(255,255,255,.07);padding:2px 5px;border-radius:3px">/base/<b>[appToken]</b>?table=<b>[tableId]</b></code>
         </div>
-        <div class="field-row"><div class="field-key" style="font-size:11px;color:var(--muted);padding-top:8px">App ID</div>
-          <input type="text" class="field-val" id="cfg-appid" placeholder="cli_xxxxxxxxxxxxxxxx" style="height:34px;resize:none"></div>
-        <div class="field-row"><div class="field-key" style="font-size:11px;color:var(--muted);padding-top:8px">App Secret</div>
-          <input type="password" class="field-val" id="cfg-secret" placeholder="••••••••••••••••••••••••••••••••" style="height:34px;resize:none"></div>
-        <div class="field-row"><div class="field-key" style="font-size:11px;color:var(--muted);padding-top:8px">App Token</div>
-          <input type="text" class="field-val" id="cfg-apptoken" placeholder="xxxxxxxxxxxxxxxxxx" style="height:34px;resize:none"></div>
-        <div class="field-row"><div class="field-key" style="font-size:11px;color:var(--muted);padding-top:8px">Table ID</div>
-          <input type="text" class="field-val" id="cfg-tableid" placeholder="tblxxxxxxxxxx" style="height:34px;resize:none"></div>
-        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="saveFeishuConfig()">Save Config</button>
-        <div style="font-size:10px;color:var(--muted)">⚠️ Stored in browser localStorage only. Never leaves your device.</div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">App ID</div><input class="cfg-inp" id="cId" type="text" placeholder="cli_xxxxxxxxxxxxxxxx"></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">App Secret</div><input class="cfg-inp" id="cSec" type="password" placeholder="••••••••••••••••"></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">App Token</div><input class="cfg-inp" id="cAt" type="text" placeholder="xxxxxxxxxxxxxxxxxx"></div>
+        <div><div style="font-size:11px;color:var(--muted);margin-bottom:4px">Table ID</div><input class="cfg-inp" id="cTi" type="text" placeholder="tblxxxxxxxxxx"></div>
+        <button class="btn btn-t" style="width:100%;justify-content:center" onclick="saveFCfg()">Save Config</button>
+        <div style="font-size:10px;color:var(--muted)">Stored in your browser only.</div>
       </div>
     </div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Config ────────────────────────────────────────────────────────
-let WORKER_URL = localStorage.getItem('worker_url') || '';
-let FEISHU_CFG = {};
-try { FEISHU_CFG = JSON.parse(localStorage.getItem('feishu_cfg') || '{}'); } catch(e){}
+let W = localStorage.getItem('nw') || '';
+let FC = {}; try{FC=JSON.parse(localStorage.getItem('nfc')||'{}');}catch(e){}
+let hist = []; try{hist=JSON.parse(localStorage.getItem('nh')||'[]');}catch(e){}
+let B64 = '';   // base64 of current file (no data:... prefix)
+let MIME = '';  // mime type of current file
 
-let currentFile = null;
-let history = [];
-try { history = JSON.parse(localStorage.getItem('po_history') || '[]'); } catch(e){}
-
-// Init UI
-function initConfig() {
-  if (WORKER_URL) {
-    document.getElementById('workerUrl').value = WORKER_URL;
-    document.getElementById('configBanner').className = 'config-banner ok';
-    document.getElementById('configBanner').innerHTML =
-      `✅ &nbsp;Worker connected: <code style="font-family:monospace">${WORKER_URL}</code> &nbsp;
-       <button class="config-btn" onclick="resetWorker()" style="background:#64748b">Change</button>`;
+function initUI(){
+  if(W){
+    document.getElementById('banner').className='banner okb';
+    document.getElementById('banner').innerHTML=`✅ Worker connected: <code style="font-family:monospace;font-size:11px">${W}</code> &nbsp;<button class="cbtn" style="background:#64748b" onclick="resetW()">Change</button>`;
   }
-  if (FEISHU_CFG.appId)     document.getElementById('cfg-appid').value    = FEISHU_CFG.appId;
-  if (FEISHU_CFG.appSecret) document.getElementById('cfg-secret').value   = FEISHU_CFG.appSecret;
-  if (FEISHU_CFG.appToken)  document.getElementById('cfg-apptoken').value = FEISHU_CFG.appToken;
-  if (FEISHU_CFG.tableId)   document.getElementById('cfg-tableid').value  = FEISHU_CFG.tableId;
+  if(FC.appId) document.getElementById('cId').value=FC.appId;
+  if(FC.appSecret) document.getElementById('cSec').value=FC.appSecret;
+  if(FC.appToken) document.getElementById('cAt').value=FC.appToken;
+  if(FC.tableId) document.getElementById('cTi').value=FC.tableId;
 }
-initConfig();
+initUI();
 
-function saveWorkerUrl() {
-  const url = document.getElementById('workerUrl').value.trim().replace(/\/$/, '');
-  if (!url.startsWith('http')) { showToast('Invalid URL', 'fail'); return; }
-  WORKER_URL = url;
-  localStorage.setItem('worker_url', url);
-  initConfig();
-  showToast('✓ Worker URL saved');
+function saveWorker(){
+  const u=document.getElementById('workerUrl').value.trim().replace(/\/$/,'');
+  if(!u.startsWith('http')){toast('Invalid URL','f');return;}
+  W=u; localStorage.setItem('nw',u); initUI(); toast('✓ Worker saved');
 }
-function resetWorker() {
-  localStorage.removeItem('worker_url');
-  WORKER_URL = '';
-  location.reload();
-}
-function saveFeishuConfig() {
-  FEISHU_CFG = {
-    appId:     document.getElementById('cfg-appid').value.trim(),
-    appSecret: document.getElementById('cfg-secret').value.trim(),
-    appToken:  document.getElementById('cfg-apptoken').value.trim(),
-    tableId:   document.getElementById('cfg-tableid').value.trim(),
-  };
-  localStorage.setItem('feishu_cfg', JSON.stringify(FEISHU_CFG));
-  showToast('✓ Feishu config saved');
+function resetW(){localStorage.removeItem('nw');location.reload();}
+function saveFCfg(){
+  FC={appId:document.getElementById('cId').value.trim(),appSecret:document.getElementById('cSec').value.trim(),appToken:document.getElementById('cAt').value.trim(),tableId:document.getElementById('cTi').value.trim()};
+  localStorage.setItem('nfc',JSON.stringify(FC)); toast('✓ Feishu config saved');
 }
 
-// ── File upload ───────────────────────────────────────────────────
-const dropzone  = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
-dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
-dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
-dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag'); handleFile(e.dataTransfer.files[0]); });
+// File upload — read base64 immediately on file select
+const dz=document.getElementById('dz'), fi=document.getElementById('fi');
+fi.addEventListener('change', e=>loadF(e.target.files[0]));
+dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
+dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
+dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');loadF(e.dataTransfer.files[0]);});
 
-function handleFile(file) {
-  if (!file) return;
-  currentFile = file;
-  const preview = document.getElementById('previewArea');
-  if (file.type.startsWith('image/')) {
-    const reader = new FileReader();
-    reader.onload = e => { preview.innerHTML = `<img src="${e.target.result}" alt="preview">`; };
-    reader.readAsDataURL(file);
+function loadF(file){
+  if(!file) return;
+  MIME = file.type;
+  B64  = '';
+
+  // Preview
+  const pv=document.getElementById('pv');
+  if(file.type.startsWith('image/')){
+    const r=new FileReader();
+    r.onload=e=>{ pv.innerHTML=`<img src="${e.target.result}" alt="">`; };
+    r.readAsDataURL(file);
   } else {
-    preview.innerHTML = `<div class="pdf-icon"><div>📄</div>${esc(file.name)}<br><span style="font-size:10px">${(file.size/1024).toFixed(0)} KB</span></div>`;
+    pv.innerHTML=`<div class="empty"><div class="ic">📄</div>${esc(file.name)}<br><span style="font-size:10px">${(file.size/1024).toFixed(0)} KB</span></div>`;
   }
-  const btn = document.getElementById('extractBtn');
-  btn.disabled = false;
-  document.getElementById('btnText').textContent = '✨  Extract Information';
+
+  // Read base64 — critical fix: wait for this before allowing extract
+  const r2=new FileReader();
+  r2.onload=e=>{
+    B64 = e.target.result.split(',')[1];
+    document.getElementById('exBtn').disabled=false;
+    document.getElementById('bText').textContent='✨  Extract Information';
+    console.log('Ready. MIME:',MIME,'B64 length:',B64.length);
+  };
+  r2.onerror=e=>{ console.error('FileReader error',e); toast('File read error','f'); };
+  r2.readAsDataURL(file);
 }
 
-// ── Extract ───────────────────────────────────────────────────────
-document.getElementById('extractBtn').addEventListener('click', async () => {
-  if (!currentFile) return;
-  if (!WORKER_URL) {
-    showToast('Please set your Worker URL first', 'fail'); return;
-  }
+// Extract
+document.getElementById('exBtn').addEventListener('click', async()=>{
+  if(!B64)   {toast('File not ready yet, wait a moment','f');return;}
+  if(!W)     {toast('Set Worker URL first','f');return;}
 
-  setStatus('loading', '⏳  AI is reading the document...');
-  const btn = document.getElementById('extractBtn');
-  btn.disabled = true;
-  document.getElementById('btnIcon').innerHTML = '<span class="spin">⟳</span>';
-  document.getElementById('btnText').textContent = 'Extracting...';
-  document.getElementById('resultCard').classList.remove('show');
-  document.getElementById('emptyExtract').style.display = 'none';
+  setSbar('loading','⏳  AI reading document...');
+  const btn=document.getElementById('exBtn');
+  btn.disabled=true;
+  document.getElementById('bIcon').innerHTML='<span class="spin">⟳</span>';
+  document.getElementById('bText').textContent='Extracting...';
+  document.getElementById('rc').classList.remove('show');
+  document.getElementById('emEx').style.display='none';
 
-  try {
-    const base64full = await fileToBase64(currentFile);
-    const base64data = base64full.split(',')[1];
-    const isPDF = currentFile.type === 'application/pdf';
+  try{
+    const body={
+      image_base64: B64,
+      image_type:   MIME,
+      prompt:`You are a purchase order and invoice extraction assistant. Analyze this document carefully.
 
-    const contentBlock = isPDF
-      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64data } }
-      : { type: 'image',    source: { type: 'base64', media_type: currentFile.type,   data: base64data } };
-
-    const prompt = `You are a purchase order / invoice extraction assistant. Analyze this document and extract all key information.
-
-Return ONLY valid JSON, no other text:
+Return ONLY valid JSON, no markdown fences, no explanation whatsoever:
 
 {
-  "supplier": "supplier name",
+  "supplier": "supplier company name",
   "doc_date": "YYYY-MM-DD or null",
-  "doc_number": "document/order number",
-  "currency": "USD or CNY or EUR etc",
-  "total_amount": "number only, no currency symbol",
-  "payment_terms": "e.g. T/T 30 days, or null",
+  "doc_number": "PO or invoice number or null",
+  "currency": "USD or CNY or EUR",
+  "total_amount": "number only no symbols",
+  "payment_terms": "payment terms or null",
   "delivery_date": "YYYY-MM-DD or null",
   "notes": "important notes or null",
   "confidence": "high or medium",
   "items": [
     {
-      "name": "full item name including model/spec",
+      "name": "full item name with model spec",
       "quantity": "number only",
-      "unit": "pcs/kg/set etc",
+      "unit": "pcs kg set etc",
       "unit_price": "number only",
       "subtotal": "number only"
     }
   ]
-}`;
+}`
+    };
 
-    const response = await fetch(WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-opus-4-5',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: [contentBlock, { type: 'text', text: prompt }] }]
-      })
-    });
+    const res=await fetch(W,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(!res.ok||data.error) throw new Error(JSON.stringify(data.error||data));
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`Worker error ${response.status}: ${err}`);
-    }
+    const raw=data.text||'';
+    const clean=raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    renderR(JSON.parse(clean));
+    setSbar('success','✅  Done — save to Feishu when ready');
 
-    const data = await response.json();
-    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
-
-    const text = (data.content || []).map(b => b.text || '').join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const result = JSON.parse(clean);
-    renderResult(result);
-    setStatus('success', '✅  Done — review and save to Feishu');
-
-  } catch(err) {
+  }catch(err){
     console.error(err);
-    setStatus('error', '❌  ' + (err.message || 'Extraction failed, please retry'));
-    document.getElementById('emptyExtract').style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    document.getElementById('btnIcon').textContent = '✨';
-    document.getElementById('btnText').textContent = 'Extract Again';
+    setSbar('error','❌  '+err.message);
+    document.getElementById('emEx').style.display='block';
+  }finally{
+    btn.disabled=false;
+    document.getElementById('bIcon').textContent='✨';
+    document.getElementById('bText').textContent='Extract Again';
   }
 });
 
-// ── Render result ─────────────────────────────────────────────────
-function renderResult(r) {
-  const v = k => (r[k] && r[k] !== 'null') ? r[k] : '';
-  document.getElementById('f-supplier').value = v('supplier');
-  document.getElementById('f-date').value     = v('doc_date');
-  document.getElementById('f-docnum').value   = v('doc_number');
-  document.getElementById('f-currency').value = v('currency');
-  document.getElementById('f-total').value    = v('total_amount');
-  document.getElementById('f-payment').value  = v('payment_terms');
-  document.getElementById('f-delivery').value = v('delivery_date');
-  document.getElementById('f-notes').value    = v('notes');
-
-  const badge = document.getElementById('confBadge');
-  badge.textContent = r.confidence === 'high' ? 'High confidence' : 'Medium confidence';
-  badge.className   = 'confidence-badge ' + (r.confidence === 'high' ? 'conf-high' : 'conf-med');
-
-  const tbody = document.getElementById('itemsBody');
-  tbody.innerHTML = '';
-  (r.items || []).forEach((item, i) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><div class="item-tag">Item ${i+1}</div><input class="item-input" value="${esc(item.name||'')}"></td>
-      <td><input class="item-input" value="${esc(item.quantity||'')}" style="width:52px"></td>
-      <td><input class="item-input" value="${esc(item.unit||'')}"     style="width:44px"></td>
-      <td><input class="item-input" value="${esc(item.unit_price||'')}" style="width:72px"></td>
-      <td><input class="item-input" value="${esc(item.subtotal||'')}"   style="width:82px"></td>`;
-    tbody.appendChild(tr);
+function renderR(r){
+  const v=k=>(r[k]&&r[k]!=='null')?r[k]:'';
+  document.getElementById('fS').value=v('supplier');
+  document.getElementById('fD').value=v('doc_date');
+  document.getElementById('fN').value=v('doc_number');
+  document.getElementById('fC').value=v('currency');
+  document.getElementById('fT').value=v('total_amount');
+  document.getElementById('fP').value=v('payment_terms');
+  document.getElementById('fDel').value=v('delivery_date');
+  document.getElementById('fNotes').value=v('notes');
+  const b=document.getElementById('cbadge');
+  b.textContent=r.confidence==='high'?'High confidence':'Medium confidence';
+  b.className='cbadge '+(r.confidence==='high'?'ch':'cm');
+  const tb=document.getElementById('ib'); tb.innerHTML='';
+  (r.items||[]).forEach((it,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><div class="itag">Item ${i+1}</div><input class="ii" value="${esc(it.name||'')}"></td><td><input class="ii" value="${esc(it.quantity||'')}" style="width:50px"></td><td><input class="ii" value="${esc(it.unit||'')}" style="width:42px"></td><td><input class="ii" value="${esc(it.unit_price||'')}" style="width:70px"></td><td><input class="ii" value="${esc(it.subtotal||'')}" style="width:80px"></td>`;
+    tb.appendChild(tr);
   });
-  document.getElementById('resultCard').classList.add('show');
-  document.getElementById('emptyExtract').style.display = 'none';
+  document.getElementById('rc').classList.add('show');
+  document.getElementById('emEx').style.display='none';
 }
 
-// ── Get form data ─────────────────────────────────────────────────
-function getFormData() {
-  const items = [];
-  document.querySelectorAll('#itemsBody tr').forEach(tr => {
-    const ins = tr.querySelectorAll('input');
-    if (ins.length >= 5) items.push({ name:ins[0].value, quantity:ins[1].value, unit:ins[2].value, unit_price:ins[3].value, subtotal:ins[4].value });
+function getF(){
+  const items=[];
+  document.querySelectorAll('#ib tr').forEach(tr=>{
+    const ins=tr.querySelectorAll('input');
+    if(ins.length>=5) items.push({name:ins[0].value,quantity:ins[1].value,unit:ins[2].value,unit_price:ins[3].value,subtotal:ins[4].value});
   });
-  return {
-    supplier:document.getElementById('f-supplier').value,
-    doc_date:document.getElementById('f-date').value,
-    doc_number:document.getElementById('f-docnum').value,
-    currency:document.getElementById('f-currency').value,
-    total_amount:document.getElementById('f-total').value,
-    payment_terms:document.getElementById('f-payment').value,
-    delivery_date:document.getElementById('f-delivery').value,
-    notes:document.getElementById('f-notes').value,
-    items
-  };
+  return{supplier:document.getElementById('fS').value,doc_date:document.getElementById('fD').value,doc_number:document.getElementById('fN').value,currency:document.getElementById('fC').value,total_amount:document.getElementById('fT').value,payment_terms:document.getElementById('fP').value,delivery_date:document.getElementById('fDel').value,notes:document.getElementById('fNotes').value,items};
 }
 
-// ── Save to Feishu ────────────────────────────────────────────────
-async function saveToFeishu() {
-  const cfg = FEISHU_CFG;
-  if (!cfg.appId || !cfg.appSecret || !cfg.appToken || !cfg.tableId) {
-    showToast('Configure Feishu first (⚙️ tab)', 'fail'); return;
-  }
-  if (!WORKER_URL) { showToast('Worker URL not set', 'fail'); return; }
-
-  const btn = document.getElementById('saveFeishuBtn');
-  btn.disabled = true; btn.textContent = 'Saving...';
-
-  try {
-    // 1. Get token via Worker (proxy)
-    const tokenRes = await fetch(WORKER_URL + '?feishu_token=1', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ app_id: cfg.appId, app_secret: cfg.appSecret })
-    });
-    const tokenData = await tokenRes.json();
-    const token = tokenData.tenant_access_token;
-    if (!token) throw new Error('Failed to get Feishu token: ' + JSON.stringify(tokenData));
-
-    // 2. Write each line item as a row
-    const d = getFormData();
-    let saved = 0;
-    for (const item of d.items) {
-      const record = { fields: {
-        "物料名称":  item.name,
-        "供应商":    d.supplier,
-        "采购日期":  d.doc_date ? new Date(d.doc_date).getTime() : null,
-        "单价":      parseFloat(item.unit_price) || 0,
-        "数量":      parseFloat(item.quantity)   || 0,
-        "单位":      item.unit || 'pcs',
-        "币种":      d.currency || 'USD',
-        "备注":      d.notes || ''
-      }};
-      // Remove null fields
-      Object.keys(record.fields).forEach(k => { if (record.fields[k] === null) delete record.fields[k]; });
-
-      const writeRes = await fetch(
-        `https://open.feishu.cn/open-apis/bitable/v2/apps/${cfg.appToken}/tables/${cfg.tableId}/records`,
-        { method:'POST', headers:{ 'Authorization':`Bearer ${token}`, 'Content-Type':'application/json' }, body:JSON.stringify(record) }
-      );
-      const writeData = await writeRes.json();
-      if (writeData.code === 0) saved++;
-      else throw new Error(writeData.msg || JSON.stringify(writeData));
+async function doFeishu(){
+  if(!FC.appId){toast('Set up Feishu config first (⚙️ tab)','f');return;}
+  const btn=document.getElementById('fbtn');
+  btn.disabled=true;btn.textContent='Saving...';
+  try{
+    const tr=await fetch(W+'?feishu_token=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app_id:FC.appId,app_secret:FC.appSecret})});
+    const td=await tr.json();
+    const token=td.tenant_access_token;
+    if(!token) throw new Error('No token: '+JSON.stringify(td));
+    const d=getF(); let saved=0;
+    for(const it of d.items){
+      const fields={"物料名称":it.name,"供应商":d.supplier,"单价":parseFloat(it.unit_price)||0,"数量":parseFloat(it.quantity)||0,"单位":it.unit||'pcs',"币种":d.currency||'USD',"备注":d.notes||''};
+      if(d.doc_date) fields["采购日期"]=new Date(d.doc_date).getTime();
+      const wr=await fetch(`https://open.feishu.cn/open-apis/bitable/v2/apps/${FC.appToken}/tables/${FC.tableId}/records`,{method:'POST',headers:{'Authorization':`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({fields})});
+      const wd=await wr.json();
+      if(wd.code===0) saved++; else throw new Error(wd.msg||JSON.stringify(wd));
     }
-    showToast(`✓ Saved ${saved} item(s) to Feishu`);
-    saveToHistory();
-
-  } catch(err) {
-    console.error(err);
-    showToast('❌ ' + err.message, 'fail');
-  } finally {
-    btn.disabled = false; btn.textContent = '🪁 Save to Feishu';
-  }
+    toast(`✓ Saved ${saved} item(s) to Feishu`);
+    doHist();
+  }catch(e){console.error(e);toast('❌ '+e.message,'f');}
+  finally{btn.disabled=false;btn.textContent='🪁 Save to Feishu';}
 }
 
-// ── Copy for Feishu ───────────────────────────────────────────────
-function copyForFeishu() {
-  const r = getFormData(); const cur = r.currency || '';
-  let t = `【采购单据】\nSupplier: ${r.supplier}\nDate: ${r.doc_date}\nDoc No: ${r.doc_number}\nCurrency: ${cur}\nTotal: ${r.total_amount}\n`;
-  if (r.payment_terms) t += `Payment: ${r.payment_terms}\n`;
-  if (r.delivery_date) t += `Delivery: ${r.delivery_date}\n`;
-  t += `\n【Line Items】\n`;
-  r.items.forEach((item,i) => { t += `${i+1}. ${item.name}\n   Qty: ${item.quantity} ${item.unit}  Unit: ${cur}${item.unit_price}  Sub: ${cur}${item.subtotal}\n`; });
-  if (r.notes) t += `\nNotes: ${r.notes}`;
-  copyText(t);
+function doCopy(){
+  const r=getF(),c=r.currency||'';
+  let t=`Supplier: ${r.supplier}\nDate: ${r.doc_date}  Doc: ${r.doc_number}\nCurrency: ${c}  Total: ${r.total_amount}\n\nLine Items:\n`;
+  r.items.forEach((x,i)=>{t+=`${i+1}. ${x.name}  Qty:${x.quantity}${x.unit}  @${c}${x.unit_price}  =${c}${x.subtotal}\n`;});
+  if(r.notes) t+=`\nNotes: ${r.notes}`;
+  navigator.clipboard.writeText(t).then(()=>toast('✓ Copied'));
 }
 
-// ── History ───────────────────────────────────────────────────────
-function saveToHistory() {
-  const d = getFormData(); d.saved_at = new Date().toLocaleDateString();
-  history.unshift(d); if (history.length > 50) history = history.slice(0,50);
-  try { localStorage.setItem('po_history', JSON.stringify(history)); } catch(e){}
-  renderHistory();
+function doHist(){
+  const d=getF(); d.saved_at=new Date().toLocaleDateString();
+  hist.unshift(d); if(hist.length>50) hist=hist.slice(0,50);
+  try{localStorage.setItem('nh',JSON.stringify(hist));}catch(e){}
 }
-function renderHistory() {
-  const el = document.getElementById('historyList');
-  if (!history.length) { el.innerHTML = `<div class="empty-state"><div class="icon">🗂</div>No history yet</div>`; return; }
-  el.innerHTML = history.map((h,i) => `
-    <div class="history-item" onclick="loadHistory(${i})">
-      <div class="hi-top"><div class="hi-supplier">${esc(h.supplier||'Unknown')}</div><div class="hi-date">${h.doc_date||h.saved_at||''}</div></div>
-      <div class="hi-items">${(h.items||[]).map(it=>`${esc(it.name)} × ${it.quantity}`).join('  ·  ')}</div>
-      <div class="hi-total">${h.currency||''} ${h.total_amount||''}</div>
-    </div>`).join('');
+function renderHist(){
+  const el=document.getElementById('hList');
+  if(!hist.length){el.innerHTML=`<div class="empty"><div class="ic">🗂</div>No history yet</div>`;return;}
+  el.innerHTML=hist.map((h,i)=>`<div class="hi" onclick="loadH(${i})"><div class="hi-top"><div class="hi-s">${esc(h.supplier||'Unknown')}</div><div class="hi-d">${h.doc_date||h.saved_at||''}</div></div><div class="hi-i">${(h.items||[]).map(x=>`${esc(x.name)} ×${x.quantity}`).join(' · ')}</div><div class="hi-t">${h.currency||''} ${h.total_amount||''}</div></div>`).join('');
 }
-function loadHistory(i) { renderResult(history[i]); switchTab('extract'); }
+function loadH(i){renderR(hist[i]);goTab('extract');}
 
-// ── Tabs ──────────────────────────────────────────────────────────
-function switchTab(tab) {
-  const tabs = ['extract','history','settings'];
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', tabs[i]===tab));
-  tabs.forEach(t => { document.getElementById(t+'Tab').style.display = t===tab?'block':'none'; });
-  if (tab==='history') renderHistory();
+function goTab(name){
+  const ns=['extract','history','settings'],ids=['tEx','tHi','tSet'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',ns[i]===name));
+  ids.forEach((id,i)=>{document.getElementById(id).style.display=ns[i]===name?'block':'none';});
+  if(name==='history') renderHist();
 }
-
-// ── Helpers ───────────────────────────────────────────────────────
-function setStatus(type, msg) {
-  const el = document.getElementById('statusBar');
-  el.className = 'status-bar show ' + type; el.textContent = msg;
-}
-function clearResult() {
-  document.getElementById('resultCard').classList.remove('show');
-  document.getElementById('emptyExtract').style.display = 'block';
-  document.getElementById('statusBar').classList.remove('show');
-}
-function copyText(t) { navigator.clipboard.writeText(t).then(() => showToast('✓ Copied')); }
-function showToast(msg, type='ok') {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = `toast show ${type}`;
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function fileToBase64(f) { return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
-renderHistory();
+function setSbar(type,msg){const el=document.getElementById('sbar');el.className='sbar show '+type;el.textContent=msg;}
+function clearR(){document.getElementById('rc').classList.remove('show');document.getElementById('emEx').style.display='block';document.getElementById('sbar').classList.remove('show');}
+function toast(msg,type='ok'){const t=document.getElementById('toast');t.textContent=msg;t.className=`toast show ${type==='f'?'tfl':'tok'}`;setTimeout(()=>t.classList.remove('show'),2500);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 </script>
 </body>
 </html>
