@@ -28,6 +28,7 @@
   .dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;}
   .preview{border-radius:10px;overflow:hidden;background:var(--panel2);border:1px solid var(--border);min-height:120px;display:flex;align-items:center;justify-content:center;}
   .preview img{max-width:100%;max-height:260px;object-fit:contain;display:block;}
+  .file-info{font-size:10px;color:var(--muted);text-align:center;padding:4px 0;}
   .extract-btn{width:100%;padding:13px;background:linear-gradient(135deg,var(--blue),#1d4ed8);border:none;border-radius:10px;color:white;font-size:14px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .2s;}
   .extract-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 20px rgba(59,130,246,.35);}
   .extract-btn:disabled{opacity:.5;cursor:not-allowed;}
@@ -115,12 +116,13 @@
       <div class="preview" id="pv">
         <div class="empty"><div class="ic">🖼</div>Preview after upload</div>
       </div>
+      <div class="file-info" id="fileInfo"></div>
     </div>
     <button class="extract-btn" id="exBtn" disabled>
       <span id="bIcon">✨</span><span id="bText">Upload a file to start</span>
     </button>
     <div style="font-size:11px;color:var(--muted);line-height:1.7">
-      💡 Upload supplier doc → AI reads all items and prices → one click save to Feishu price ledger.
+      💡 Images are auto-compressed before sending for faster results. PDF and images both supported.
     </div>
   </div>
 
@@ -196,13 +198,13 @@
 let W = localStorage.getItem('nw') || '';
 let FC = {}; try{FC=JSON.parse(localStorage.getItem('nfc')||'{}');}catch(e){}
 let hist = []; try{hist=JSON.parse(localStorage.getItem('nh')||'[]');}catch(e){}
-let B64 = '';   // base64 of current file (no data:... prefix)
-let MIME = '';  // mime type of current file
+let B64 = '';
+let MIME = '';
 
 function initUI(){
   if(W){
     document.getElementById('banner').className='banner okb';
-    document.getElementById('banner').innerHTML=`✅ Worker connected: <code style="font-family:monospace;font-size:11px">${W}</code> &nbsp;<button class="cbtn" style="background:#64748b" onclick="resetW()">Change</button>`;
+    document.getElementById('banner').innerHTML=`✅ Worker: <code style="font-family:monospace;font-size:11px">${W}</code> &nbsp;<button class="cbtn" style="background:#64748b" onclick="resetW()">Change</button>`;
   }
   if(FC.appId) document.getElementById('cId').value=FC.appId;
   if(FC.appSecret) document.getElementById('cSec').value=FC.appSecret;
@@ -222,46 +224,107 @@ function saveFCfg(){
   localStorage.setItem('nfc',JSON.stringify(FC)); toast('✓ Feishu config saved');
 }
 
-// File upload — read base64 immediately on file select
+// ── Compress image using canvas ───────────────────────────────────
+function compressImage(file, maxWidth, quality) {
+  return new Promise((resolve) => {
+    // For PDF, skip compression
+    if (file.type === 'application/pdf') {
+      const r = new FileReader();
+      r.onload = e => resolve({ b64: e.target.result.split(',')[1], mime: file.type });
+      r.readAsDataURL(file);
+      return;
+    }
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', quality);
+      resolve({ b64: dataUrl.split(',')[1], mime: 'image/jpeg' });
+    };
+    img.onerror = () => {
+      // fallback: read as-is
+      const r = new FileReader();
+      r.onload = e => resolve({ b64: e.target.result.split(',')[1], mime: file.type });
+      r.readAsDataURL(file);
+    };
+    img.src = url;
+  });
+}
+
+// ── File upload ───────────────────────────────────────────────────
 const dz=document.getElementById('dz'), fi=document.getElementById('fi');
 fi.addEventListener('change', e=>loadF(e.target.files[0]));
 dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('drag');});
 dz.addEventListener('dragleave',()=>dz.classList.remove('drag'));
 dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('drag');loadF(e.dataTransfer.files[0]);});
 
-function loadF(file){
+async function loadF(file){
   if(!file) return;
-  MIME = file.type;
-  B64  = '';
+  B64 = ''; MIME = '';
 
-  // Preview
+  // Show preview
   const pv=document.getElementById('pv');
   if(file.type.startsWith('image/')){
-    const r=new FileReader();
-    r.onload=e=>{ pv.innerHTML=`<img src="${e.target.result}" alt="">`; };
-    r.readAsDataURL(file);
+    pv.innerHTML=`<img src="${URL.createObjectURL(file)}" alt="">`;
   } else {
-    pv.innerHTML=`<div class="empty"><div class="ic">📄</div>${esc(file.name)}<br><span style="font-size:10px">${(file.size/1024).toFixed(0)} KB</span></div>`;
+    pv.innerHTML=`<div class="empty"><div class="ic">📄</div>${esc(file.name)}</div>`;
   }
 
-  // Read base64 — critical fix: wait for this before allowing extract
-  const r2=new FileReader();
-  r2.onload=e=>{
-    B64 = e.target.result.split(',')[1];
-    document.getElementById('exBtn').disabled=false;
-    document.getElementById('bText').textContent='✨  Extract Information';
-    console.log('Ready. MIME:',MIME,'B64 length:',B64.length);
-  };
-  r2.onerror=e=>{ console.error('FileReader error',e); toast('File read error','f'); };
-  r2.readAsDataURL(file);
+  document.getElementById('fileInfo').textContent = `Original: ${(file.size/1024).toFixed(0)} KB — compressing...`;
+  document.getElementById('exBtn').disabled = true;
+  document.getElementById('bText').textContent = 'Compressing...';
+
+  // Compress: max 1200px wide, 0.75 quality → usually ~200-400KB
+  const { b64, mime } = await compressImage(file, 1200, 0.75);
+  B64 = b64; MIME = mime;
+
+  const compressedKB = Math.round(b64.length * 0.75 / 1024);
+  document.getElementById('fileInfo').textContent =
+    `Original: ${(file.size/1024).toFixed(0)} KB → Compressed: ~${compressedKB} KB`;
+
+  document.getElementById('exBtn').disabled = false;
+  document.getElementById('bText').textContent = '✨  Extract Information';
 }
 
-// Extract
-document.getElementById('exBtn').addEventListener('click', async()=>{
-  if(!B64)   {toast('File not ready yet, wait a moment','f');return;}
-  if(!W)     {toast('Set Worker URL first','f');return;}
+// ── Robust JSON extractor ─────────────────────────────────────────
+function extractJSON(text) {
+  // 1. Strip markdown fences
+  let s = text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
 
-  setSbar('loading','⏳  AI reading document...');
+  // 2. Try direct parse first
+  try { return JSON.parse(s); } catch(e) {}
+
+  // 3. Find the outermost { ... }
+  const start = s.indexOf('{');
+  const end   = s.lastIndexOf('}');
+  if (start !== -1 && end !== -1) {
+    s = s.slice(start, end + 1);
+    try { return JSON.parse(s); } catch(e) {}
+
+    // 4. Fix common issues: trailing commas before } or ]
+    s = s
+      .replace(/,\s*}/g, '}')
+      .replace(/,\s*]/g, ']')
+      .replace(/(['"])?([a-zA-Z0-9_]+)(['"])?:/g, '"$2":')  // unquoted keys
+      .replace(/:\s*'([^']*)'/g, ': "$1"');                  // single-quoted values
+    try { return JSON.parse(s); } catch(e) {}
+  }
+
+  throw new Error('Could not parse AI response as JSON. Raw: ' + text.slice(0, 200));
+}
+
+// ── Extract ───────────────────────────────────────────────────────
+document.getElementById('exBtn').addEventListener('click', async()=>{
+  if(!B64)  {toast('File not ready','f');return;}
+  if(!W)    {toast('Set Worker URL first','f');return;}
+
+  setSbar('loading','⏳  Extracting — usually 5-15 seconds...');
   const btn=document.getElementById('exBtn');
   btn.disabled=true;
   document.getElementById('bIcon').innerHTML='<span class="spin">⟳</span>';
@@ -270,43 +333,45 @@ document.getElementById('exBtn').addEventListener('click', async()=>{
   document.getElementById('emEx').style.display='none';
 
   try{
-    const body={
-      image_base64: B64,
-      image_type:   MIME,
-      prompt:`You are a purchase order and invoice extraction assistant. Analyze this document carefully.
+    const prompt = `You are a purchase order and invoice data extraction assistant.
+Analyze this document and extract all information.
 
-Return ONLY valid JSON, no markdown fences, no explanation whatsoever:
+IMPORTANT: Return a raw JSON object only. No markdown. No backticks. No explanation.
+Start with { and end with }. Nothing else.
 
 {
   "supplier": "supplier company name",
   "doc_date": "YYYY-MM-DD or null",
   "doc_number": "PO or invoice number or null",
   "currency": "USD or CNY or EUR",
-  "total_amount": "number only no symbols",
+  "total_amount": "number only",
   "payment_terms": "payment terms or null",
   "delivery_date": "YYYY-MM-DD or null",
   "notes": "important notes or null",
   "confidence": "high or medium",
   "items": [
     {
-      "name": "full item name with model spec",
+      "name": "full item name with model and spec",
       "quantity": "number only",
-      "unit": "pcs kg set etc",
+      "unit": "pcs or kg or set",
       "unit_price": "number only",
       "subtotal": "number only"
     }
   ]
-}`
-    };
+}`;
 
-    const res=await fetch(W,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const data=await res.json();
-    if(!res.ok||data.error) throw new Error(JSON.stringify(data.error||data));
+    const res = await fetch(W, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ image_base64: B64, image_type: MIME, prompt })
+    });
 
-    const raw=data.text||'';
-    const clean=raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
-    renderR(JSON.parse(clean));
-    setSbar('success','✅  Done — save to Feishu when ready');
+    const data = await res.json();
+    if(!res.ok || data.error) throw new Error(JSON.stringify(data.error || data));
+
+    const result = extractJSON(data.text || '');
+    renderR(result);
+    setSbar('success','✅  Done — review and save to Feishu');
 
   }catch(err){
     console.error(err);
@@ -319,6 +384,7 @@ Return ONLY valid JSON, no markdown fences, no explanation whatsoever:
   }
 });
 
+// ── Render ────────────────────────────────────────────────────────
 function renderR(r){
   const v=k=>(r[k]&&r[k]!=='null')?r[k]:'';
   document.getElementById('fS').value=v('supplier');
@@ -351,10 +417,11 @@ function getF(){
   return{supplier:document.getElementById('fS').value,doc_date:document.getElementById('fD').value,doc_number:document.getElementById('fN').value,currency:document.getElementById('fC').value,total_amount:document.getElementById('fT').value,payment_terms:document.getElementById('fP').value,delivery_date:document.getElementById('fDel').value,notes:document.getElementById('fNotes').value,items};
 }
 
+// ── Save to Feishu ────────────────────────────────────────────────
 async function doFeishu(){
   if(!FC.appId){toast('Set up Feishu config first (⚙️ tab)','f');return;}
   const btn=document.getElementById('fbtn');
-  btn.disabled=true;btn.textContent='Saving...';
+  btn.disabled=true; btn.textContent='Saving...';
   try{
     const tr=await fetch(W+'?feishu_token=1',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({app_id:FC.appId,app_secret:FC.appSecret})});
     const td=await tr.json();
